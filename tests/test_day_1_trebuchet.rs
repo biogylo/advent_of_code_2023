@@ -50,15 +50,35 @@ mod tests {
 
     #[test]
     fn multi_line_example_short() {
-        let example = &fs::read_to_string("../data/trebuchet_input_short.txt").unwrap();
-        let num = get_trebuchet_multiple(example);
+        let example = fs::read_to_string("./data/trebuchet_input_short.txt").unwrap();
+        let num = get_trebuchet_multiple(&example);
         assert_eq!(num, 142);
     }
 
     #[test]
     fn multi_line_example_long() {
-        let example = &fs::read_to_string("../data/trebuchet_input_long.txt").unwrap();
+        let example = fs::read_to_string("./data/trebuchet_input_long.txt").unwrap();
+        let num = get_trebuchet_multiple(&example);
+        assert_eq!(num, 55686);
+    }
+
+    #[test]
+    fn all_spelled_out() {
+        let example = "two1nine";
+        let num = get_trebuchet(example).unwrap();
+        assert_eq!(num, 29);
+    }
+
+    #[test]
+    fn spelled_out_should_work() {
+        let example = "two1nine
+eightwothree
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen";
         let num = get_trebuchet_multiple(example);
-        assert_eq!(num, 55029);
+        assert_eq!(num, 281);
     }
 }
