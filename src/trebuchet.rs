@@ -1,20 +1,31 @@
-fn get_first_digit_substring(the_buffer: &str) -> Option<usize> {
-    const NUM_WORDS: [&str; 10] = [
-        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-    ];
+const DIGIT_WORDS: [&str; 10] = [
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+];
 
-    let first_char = the_buffer.chars().next()?;
-    if first_char.is_digit(10) {
-        return Some(first_char.to_digit(10).unwrap() as usize);
+/*
+   Takes in a string slice, and returns the first digit substring
+   it finds. The first digit can come either as a digit char, or a word
+   (E.g. one, two, three)
+*/
+fn get_first_digit_substring(the_buffer: &str) -> Option<u32> {
+    // First check the first char, to see if it is a digit
+    if let Some(num) = the_buffer.chars().next()?.to_digit(10) {
+        return Some(num);
     }
-    NUM_WORDS
+    let lowercase_buffer: String = the_buffer.to_lowercase();
+
+    DIGIT_WORDS
         .iter()
-        .position(|&word| the_buffer.starts_with(word)) // The digit value is the index of the one we find in NUM_WORDS first
+        .position(|digit_word: &&str| lowercase_buffer.starts_with(digit_word))
+        .map(|num| num as u32)
 }
 
-// Returns a tuple with the first match, and the index where the match was found
-fn get_all_digits(the_buffer: &str) -> Vec<usize> {
-    let mut nums: Vec<usize> = vec![];
+/*
+    From a string, it returns all the digit substrings
+     in the string. Possible digit substrings are "1", "2", "two", "four".
+*/
+fn get_all_digits(the_buffer: &str) -> Vec<u32> {
+    let mut nums: Vec<u32> = vec![];
     // First check first value, if it is straight up a digit
     for i in 0..the_buffer.len() {
         if let Some(digit) = get_first_digit_substring(&the_buffer[i..]) {
@@ -24,15 +35,15 @@ fn get_all_digits(the_buffer: &str) -> Vec<usize> {
     return nums;
 }
 
-pub fn get_trebuchet(trebuchet: &str) -> Option<usize> {
-    let all_digits: Vec<usize> = get_all_digits(trebuchet);
+pub fn get_trebuchet(trebuchet: &str) -> Option<u32> {
+    let all_digits: Vec<u32> = get_all_digits(trebuchet);
 
     let (first, last) = (all_digits.first()?, all_digits.last()?);
 
     Some(first * 10 + last)
 }
 
-pub fn get_trebuchet_multiple(trebuchet: &str) -> usize {
-    let list_of_line_sums: Vec<usize> = trebuchet.lines().filter_map(get_trebuchet).collect();
+pub fn get_trebuchet_multiple(trebuchet: &str) -> u32 {
+    let list_of_line_sums: Vec<u32> = trebuchet.lines().filter_map(get_trebuchet).collect();
     return list_of_line_sums.iter().sum();
 }
