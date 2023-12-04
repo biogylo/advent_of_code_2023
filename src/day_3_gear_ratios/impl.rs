@@ -1,18 +1,26 @@
 use crate::day_3_gear_ratios;
 use crate::day_3_gear_ratios::{CharInfo, PartNumber, Schematic, Symbol};
 use itertools::Itertools;
+use std::ops::RangeInclusive;
 use std::str::FromStr;
 
 impl Symbol {
     fn from(char_info: CharInfo) -> Option<Symbol> {
         if day_3_gear_ratios::is_symbol(&char_info.character) {
-            return Some(Symbol {
-                character: char_info.character,
-                row: char_info.row,
-                column: char_info.column,
-            });
+            return Some(Symbol { 0: char_info });
         }
         return None;
+    }
+
+    fn char(&self) -> &char {
+        &self.0.character
+    }
+    fn row_adjacent_index_iter(&self) -> RangeInclusive<i32> {
+        (self.0.row as i32 - 1..=self.0.row as i32 + 1).into_iter()
+    }
+
+    fn column_adjacent_index_iter(&self) -> RangeInclusive<i32> {
+        (self.0.column as i32 - 1..=self.0.column as i32 + 1).into_iter()
     }
 }
 
@@ -21,18 +29,21 @@ impl Schematic {
         self.chars.get(y)?.get(x)
     }
 
-    pub fn get_number_row_boundaries(&self, x: usize, y: usize) -> Option<PartNumber> {
-        let the_row_chars = self.chars.get(y)?;
-        the_row_chars.get(x)?.to_digit(10)?;
+    pub fn get_number_row_boundaries(&self, row: usize, column: usize) -> Option<PartNumber> {
+        let the_row_chars = self.chars.get(row)?;
+
+        if !the_row_chars.get(column)?.is_digit(10) {
+            return None;
+        }
 
         // Find rightmost digit
-        let rightmost = (x..the_row_chars.len())
+        let rightmost = (column..the_row_chars.len())
             .take_while(|&i| the_row_chars[i].is_digit(10))
             .last()
             .unwrap();
 
         // Find leftmost digit
-        let leftmost = (0..=x)
+        let leftmost = (0..=column)
             .rev()
             .take_while(|&i| the_row_chars[i].is_digit(10))
             .last()
@@ -46,21 +57,17 @@ impl Schematic {
 
         Some(PartNumber {
             number,
-            row: y,
+            row,
             column_start: leftmost,
             column_end: rightmost,
         })
     }
-    pub fn get_numbers_adjacent_to_symbol(&self, symbol: Symbol) -> Vec<PartNumber> {
-        let y_iter = (symbol.row as i32 - 1..=symbol.row as i32 + 1)
-            .into_iter()
-            .filter(|&x| (0 <= x) && (x < self.width as i32));
-        let x_iter = (symbol.column as i32 - 1..=symbol.column as i32 + 1)
-            .into_iter()
-            .filter(|&y| (0 <= y) && (y < self.height as i32));
-        x_iter
-            .cartesian_product(y_iter)
-            .map(|(x, y)| self.get_number_row_boundaries(x as usize, y as usize))
+    pub fn get_numbers_adjacent_to_symbol(&self, symbol: &Symbol) -> Vec<PartNumber> {
+        let row_iter = symbol.row_adjacent_index_iter().into_iter();
+        let column_iter = symbol.column_adjacent_index_iter().into_iter();
+        row_iter
+            .cartesian_product(column_iter)
+            .map(|(row, column)| self.get_number_row_boundaries(row as usize, column as usize))
             .flatten()
             .unique()
             .collect()
@@ -78,25 +85,18 @@ impl Schematic {
         char_infos.map(Symbol::from).flatten().collect()
     }
     pub fn get_gear_ratios(&self) -> Vec<usize> {
-        let mut ratios: Vec<usize> = vec![];
-
-        for symbol in self.get_symbols() {
-            if symbol.character != '*' {
-                continue;
-            }
-            let adjacent_numbers = self.get_numbers_adjacent_to_symbol(symbol);
-            if adjacent_numbers.len() != 2 {
-                continue;
-            }
-            ratios.push(adjacent_numbers[0].number * adjacent_numbers[1].number)
-        }
-
-        return ratios;
+        self.get_symbols()
+            .iter()
+            .filter(|&symbol| *symbol.char() == '*')
+            .map(|symbol| self.get_numbers_adjacent_to_symbol(symbol))
+            .filter(|vector| vector.len() == 2)
+            .map(|vector| vector.get(0).unwrap() * vector.get(1).unwrap())
+            .collect()
     }
     pub fn get_part_numbers(&self) -> Vec<usize> {
         self.get_symbols()
             .into_iter()
-            .map(|symbol| self.get_numbers_adjacent_to_symbol(symbol))
+            .map(|symbol| self.get_numbers_adjacent_to_symbol(&symbol))
             .collect::<Vec<Vec<PartNumber>>>()
             .concat()
             .iter()
@@ -106,6 +106,13 @@ impl Schematic {
     }
 }
 
+impl std::ops::Mul<&PartNumber> for &PartNumber {
+    type Output = usize;
+
+    fn mul(self, rhs: &PartNumber) -> usize {
+        rhs.number * self.number
+    }
+}
 impl FromStr for Schematic {
     type Err = String;
 

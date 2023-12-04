@@ -1,5 +1,7 @@
 use crate::day_2_cube_conundrum;
 use crate::day_2_cube_conundrum::{Conundrum, CubeColor, CubeCounts, Game};
+use std::string::String;
+
 use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
@@ -16,8 +18,8 @@ impl FromIterator<(CubeColor, usize)> for CubeCounts {
 }
 
 impl<const N: usize> From<[(CubeColor, usize); N]> for CubeCounts {
-    fn from(cubecolor_usize_array: [(CubeColor, usize); N]) -> Self {
-        cubecolor_usize_array.into_iter().collect()
+    fn from(cube_color_usize_array: [(CubeColor, usize); N]) -> Self {
+        cube_color_usize_array.into_iter().collect()
     }
 }
 
@@ -46,7 +48,7 @@ impl FromStr for CubeColor {
 
 impl CubeCounts {
     pub fn get(&self, color: &CubeColor) -> usize {
-        self.0[&color]
+        self.0.get(&color).unwrap().clone()
     }
     /*
         Whether the given cube count fits the other one
@@ -122,17 +124,19 @@ impl Game {
 
     pub fn smallest_bag(&self) -> CubeCounts {
         CubeColor::iter()
-            .map(|color| {
-                (
-                    color.clone(),
-                    self.turns
-                        .iter()
-                        .map(|turn| turn.get(&color))
-                        .max()
-                        .unwrap(),
-                )
-            })
+            .map(|color| (color.clone(), self.highest_count(&color)))
             .collect()
+    }
+
+    /*
+        Returns the highest count in a draw of a given color variant in the game
+    */
+    fn highest_count(&self, color: &CubeColor) -> usize {
+        self.turns
+            .iter()
+            .map(|turn| turn.get(&color))
+            .max()
+            .unwrap()
     }
 }
 
@@ -147,13 +151,13 @@ impl FromStr for Game {
         let game_id: usize = game_id_token
             .parse()
             .or(Err("Unable to parse game id".to_string()))?;
-        let turn_cube_counts: Result<Vec<CubeCounts>, String> = turn_tokens
+        let turn_cube_counts: Vec<CubeCounts> = turn_tokens
             .split(";")
             .map(|turn_token| CubeCounts::from_turn_str(turn_token))
-            .collect();
+            .collect::<Result<Vec<CubeCounts>, String>>()?;
         Ok(Self {
             id: game_id,
-            turns: turn_cube_counts?,
+            turns: turn_cube_counts,
         })
     }
 }

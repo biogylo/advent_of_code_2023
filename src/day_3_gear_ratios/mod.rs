@@ -6,11 +6,7 @@ pub struct CharInfo {
     pub column: usize,
 }
 
-pub struct Symbol {
-    pub character: char,
-    row: usize,
-    column: usize,
-}
+pub struct Symbol(CharInfo);
 
 fn is_symbol(character: &char) -> bool {
     !character.is_digit(10) && *character != '.'
