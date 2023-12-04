@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use advent_of_code_2023::friend::Friends;
-    use advent_of_code_2023::gear_ratios::Schematic;
+    use advent_of_code_2023::day_3_gear_ratios::Schematic;
     use std::fs;
     use std::str::FromStr;
 

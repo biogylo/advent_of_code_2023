@@ -8,12 +8,11 @@ const DIGIT_WORDS: [&str; 10] = [
    (E.g. one, two, three)
 */
 fn get_first_digit_substring(the_buffer: &str) -> Option<u32> {
-    // First check the first char, to see if it is a digit
-    if let Some(num) = the_buffer.chars().next()?.to_digit(10) {
-        return Some(num);
-    }
     let lowercase_buffer: String = the_buffer.to_lowercase();
-
+    // First check the first char, to see if it is a digit
+    if let Some(digit) = the_buffer.chars().next()?.to_digit(10) {
+        return Some(digit);
+    }
     DIGIT_WORDS
         .iter()
         .position(|digit_word: &&str| lowercase_buffer.starts_with(digit_word))
@@ -25,14 +24,11 @@ fn get_first_digit_substring(the_buffer: &str) -> Option<u32> {
      in the string. Possible digit substrings are "1", "2", "two", "four".
 */
 fn get_all_digits(the_buffer: &str) -> Vec<u32> {
-    let mut nums: Vec<u32> = vec![];
-    // First check first value, if it is straight up a digit
-    for i in 0..the_buffer.len() {
-        if let Some(digit) = get_first_digit_substring(&the_buffer[i..]) {
-            nums.push(digit)
-        }
-    }
-    return nums;
+    (0..the_buffer.len())
+        .map(|i| &the_buffer[i..])
+        .map(get_first_digit_substring)
+        .flatten()
+        .collect()
 }
 
 pub fn get_trebuchet(trebuchet: &str) -> Option<u32> {

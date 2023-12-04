@@ -17,7 +17,7 @@ Consider your entire calibration document. What is the sum of all of the calibra
 
 #[cfg(test)]
 mod tests {
-    use advent_of_code_2023::trebuchet::{get_trebuchet, get_trebuchet_multiple};
+    use advent_of_code_2023::day_1_trebuchet::{get_trebuchet, get_trebuchet_multiple};
     use std::fs;
     #[test]
     fn single_line_example_short_first_last() {

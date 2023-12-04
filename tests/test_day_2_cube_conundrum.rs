@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use advent_of_code_2023::cube_conundrum::{Conundrum, CubeColor, CubeCounts, Game};
+    use advent_of_code_2023::day_2_cube_conundrum::{Conundrum, CubeColor, CubeCounts, Game};
     use std::fs;
     use std::str::FromStr;
     #[test]

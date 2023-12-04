@@ -1,24 +1,16 @@
+use crate::day_2_cube_conundrum;
+use crate::day_2_cube_conundrum::{Conundrum, CubeColor, CubeCounts, Game};
 use std::collections::HashMap;
+use std::fmt;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
-#[derive(Debug, Eq, PartialEq, Hash, EnumIter, Clone)]
-pub enum CubeColor {
-    Red,
-    Blue,
-    Green,
-}
-#[derive(Eq, Debug, PartialEq)]
-pub struct CubeCounts(HashMap<CubeColor, usize>);
 
 impl FromIterator<(CubeColor, usize)> for CubeCounts {
     fn from_iter<T: IntoIterator<Item = (CubeColor, usize)>>(iter: T) -> Self {
-        let mut the_hashmap = HashMap::from_iter(iter);
-        for variant in CubeColor::iter() {
-            if !the_hashmap.contains_key(&variant) {
-                the_hashmap.insert(variant, 0);
-            }
-        }
+        let the_hashmap: HashMap<CubeColor, usize> = CubeColor::iter()
+            .map(|variant| (variant, 0)) // Set default values to 0
+            .chain(iter) // Combine with the given
+            .collect();
         return CubeCounts { 0: the_hashmap };
     }
 }
@@ -28,24 +20,28 @@ impl<const N: usize> From<[(CubeColor, usize); N]> for CubeCounts {
         cubecolor_usize_array.into_iter().collect()
     }
 }
-impl FromStr for CubeColor {
-    type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.trim().to_lowercase().as_str() {
-            "red" => Ok(CubeColor::Red),
-            "green" => Ok(CubeColor::Green),
-            "blue" => Ok(CubeColor::Blue),
-            _ => Err(()),
+impl fmt::Display for CubeColor {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CubeColor::Red => write!(f, "Red"),
+            CubeColor::Green => write!(f, "Green"),
+            CubeColor::Blue => write!(f, "Blue"),
         }
     }
 }
 
-fn get_elements_from_turn_token(token: &str) -> Option<(CubeColor, usize)> {
-    let (number_token, color_token) = token.trim().split_once(' ')?;
-    let color = CubeColor::from_str(color_token).ok()?;
-    let count = usize::from_str(number_token).ok()?;
-    Some((color, count))
+impl FromStr for CubeColor {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        const ERROR_STR: &str = "Unable to obtain a color from the given string";
+        let clean_input = s.trim().to_lowercase();
+        let mapping: HashMap<String, Self> = Self::iter()
+            .map(|variant| (variant.to_string().to_lowercase(), variant))
+            .collect();
+        mapping.get(clean_input.as_str()).cloned().ok_or(ERROR_STR)
+    }
 }
 
 impl CubeCounts {
@@ -56,12 +52,7 @@ impl CubeCounts {
         Whether the given cube count fits the other one
     */
     pub fn fits(&self, bag_other: &Self) -> bool {
-        for color in CubeColor::iter() {
-            if self.0[&color] > bag_other.0[&color] {
-                return false;
-            }
-        }
-        return true;
+        CubeColor::iter().all(|color| self.0[&color] <= bag_other.0[&color])
     }
     /*
         Takes in a line like " 3 blue, 4 red",
@@ -71,7 +62,7 @@ impl CubeCounts {
         let turn_vector: Vec<(CubeColor, usize)> = turn_string
             .trim()
             .split(',')
-            .map(get_elements_from_turn_token)
+            .map(day_2_cube_conundrum::get_elements_from_turn_token)
             .collect::<Option<Vec<(CubeColor, usize)>>>()
             .ok_or(String::from("Unable to parse turn string"))?;
         return Ok(CubeCounts::from_iter(turn_vector.into_iter()));
@@ -82,14 +73,6 @@ impl CubeCounts {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
-pub struct Game {
-    pub id: usize,
-    pub turns: Vec<CubeCounts>,
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct Conundrum(pub Vec<Game>);
 impl FromStr for Conundrum {
     type Err = String;
 
@@ -102,6 +85,7 @@ impl FromStr for Conundrum {
         })
     }
 }
+
 impl Conundrum {
     pub fn possible_games(&self, bag: &CubeCounts) -> Vec<usize> {
         self.0
@@ -126,6 +110,7 @@ impl Conundrum {
             .collect()
     }
 }
+
 impl Game {
     /*
         Tells you whether the game can be done with the
