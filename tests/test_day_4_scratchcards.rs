@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod test_simple_struct_parsing {
     use advent_of_code_2023::day_4_scratchcards::{ScratchCard, ScratchPile};
     use std::fs;
 
@@ -16,6 +16,11 @@ mod tests {
         let scratch: ScratchPile = example.parse().unwrap();
         assert_eq!(scratch.matches_double(), 13);
     }
+}
+
+mod test_challenge_parsing {
+    use advent_of_code_2023::day_4_scratchcards::{ScratchCard, ScratchPile};
+    use std::fs;
     #[test]
     fn scratchpile_challenge_1_parsed_correctly() {
         let example = fs::read_to_string("./data/scratchcards_input_long.txt").unwrap();
