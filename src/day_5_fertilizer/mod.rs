@@ -1,14 +1,28 @@
 use itertools::Itertools;
-use std::cmp::{max, min};
-use std::collections::{HashMap, HashSet};
+use std::cmp::{max, min, Ordering};
+use std::collections::HashMap;
 
 use std::isize;
 use std::ops::Range;
-use std::slice::Iter;
 use std::str::FromStr;
+use strum_macros::Display;
 
-pub struct MapRangeList(pub Vec<MapRange>);
+pub struct MapRangeList {
+    vector: Vec<MapRange>,
+}
 
+impl MapRangeList {
+    fn from_vec(vector: Vec<MapRange>) -> MapRangeList {
+        MapRangeList {
+            vector: vector
+                .into_iter()
+                .sorted_by(|map_range_a, map_range_b| {
+                    map_range_a.source.start.cmp(&map_range_b.source.start)
+                })
+                .collect_vec(),
+        }
+    }
+}
 pub struct Almanac {
     base_values: Vec<isize>,
     base_key_name: String,
@@ -30,108 +44,137 @@ impl SetOperate for Range<isize> {
         Some(left_bound..right_bound)
     }
 }
-pub struct NumberSet(HashSet<Range<isize>>);
+pub struct NumberSet {
+    vector: Vec<Range<isize>>, // For order
+}
+fn compare_ranges_start(range_a: &Range<isize>, range_b: &Range<isize>) -> Ordering {
+    range_a.start.cmp(&range_b.start)
+}
 impl NumberSet {
-    fn empty() -> NumberSet {
-        NumberSet { 0: HashSet::new() }
-    }
-
-    fn contains_range(&self, range: &Range<isize>) -> bool {
-        self.0.contains(range)
-    }
-    fn push(&mut self, number_set: NumberSet) {
-        self.0.extend(number_set.iter().cloned());
-    }
-    fn push_range(&mut self, range: Range<isize>) {
-        self.0.insert(range);
-    }
-
     fn from_vec(vector: Vec<Range<isize>>) -> NumberSet {
-        NumberSet::from_iter(vector.iter().cloned())
+        NumberSet::from_iter(vector.into_iter())
     }
-
-    fn from_iter(iter: impl Iterator<Item = Range<isize>>) -> NumberSet {
-        NumberSet {
-            0: HashSet::from_iter(iter),
-        }
-    }
-
-    fn fractionate(
-        range_a: &Range<isize>,
-        range_b: &Range<isize>,
-    ) -> (Option<Range<isize>>, NumberSet /*nonoverlap*/) {
-        // Returns the overlapping range, and the non-overlapping range
-        if range_a.start >= range_b.end || range_b.start >= range_a.end {
-            return (None, NumberSet::from_range(range_a));
-        }
-        // There is two situations, one set contains the other one, or it contains the side of it
-        let left_bound;
-        let mut left_over_ranges: Vec<Range<isize>> = vec![];
-        if range_b.start < range_a.start {
-            left_bound = range_a.start;
-        } else if range_a.start < range_b.start {
-            left_bound = range_b.start;
-            left_over_ranges.push(range_a.start..range_b.start)
-        } else {
-            left_bound = range_b.start;
-        }
-        let right_bound;
-        if range_a.end == range_a.end {
-            right_bound = range_a.end;
-        } else if range_a.end > range_b.end {
-            right_bound = range_b.end;
-            left_over_ranges.push(range_b.end..range_a.end);
-        } else {
-            right_bound = range_a.end;
-        }
-        (
-            Some(left_bound..right_bound),
-            NumberSet::from_vec(left_over_ranges),
-        )
-    }
-    fn ranges_iter(&self) -> impl Iterator<Item = &Range<isize>> {
-        self.0.iter()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Range<isize>> {
-        self.ranges_iter()
-            .sorted_by(|range, other| range.start.cmp(&other.start))
-    }
-    fn apply_mapping(&self, map_list: &MapRangeList) -> NumberSet {
-        let mut mapped_values: NumberSet = NumberSet::empty();
-        let mut overlapping_numbersets: NumberSet = NumberSet::empty();
-        let mut all_splits: NumberSet = NumberSet::empty();
-        for range in self.iter() {
-            for map in map_list.iter() {
-                let (overlapping, non_overlapping) = NumberSet::fractionate(&map.source, &range);
-                if let Some(intersection) = overlapping {
-                    mapped_values.push_range(map.get_unchecked(&intersection));
-                    overlapping_numbersets.push_range(intersection);
+    fn from_iter<T>(range_iter: T) -> NumberSet
+    where
+        T: Iterator<Item = Range<isize>>,
+    {
+        let cheat = range_iter.collect_vec();
+        let mut iter = cheat.into_iter().sorted_by(compare_ranges_start).clone();
+        let mut new_bounds = vec![];
+        if let Some(last_range) = iter.next() {
+            let mut previous_range = last_range.clone();
+            for current_range in iter {
+                // previous range's start HAS to be equal or smaller than current, since we sorted
+                // previous     ->  { }
+                // current  ->  < >
+                // So its either,  { } < >   or  {< }>
+                if current_range.start > previous_range.end {
+                    // No overlap, we push them straight up
+                    new_bounds.push(previous_range.clone());
+                    previous_range = current_range.clone();
+                } else if previous_range.end < current_range.end {
+                    // They overlap, remove the bound in the middle, take the smallest left and the largest right bound
+                    // We sorted by end, however this doesn't guarantee anything
+                    previous_range =
+                        previous_range.start..max(previous_range.end, current_range.end);
                 }
-                all_splits.push(non_overlapping);
+            }
+
+            new_bounds.push(previous_range);
+        }
+        NumberSet { vector: new_bounds }
+    }
+    pub fn iter(&self) -> impl Iterator<Item = &Range<isize>> {
+        self.vector.iter()
+    }
+
+    pub fn into_iter(self) -> impl Iterator<Item = Range<isize>> {
+        self.vector.into_iter()
+    }
+    fn apply_mapping(self, map_list: &MapRangeList) -> NumberSet {
+        println!(
+            "Trying to map: {:?}, to maps {:?}",
+            self.vector, map_list.vector
+        );
+        let mut mapped_ranges: Vec<Range<isize>> = vec![];
+        let mut last_exhausted_map: usize = 0;
+        let mut ranges = self.into_iter();
+        let mut next_range_to_address = ranges.next();
+        // Assumes both the map list and the map vector are ordered
+        loop {
+            match next_range_to_address {
+                None => {
+                    println!("Finished, all addressed");
+                    return NumberSet::from_vec(mapped_ranges);
+                }
+                Some(ref range) => {
+                    let current_range = range.clone();
+                    if last_exhausted_map >= map_list.vector.len() {
+                        println!("Exhausted all maps, recycling {:?}", current_range);
+                        mapped_ranges.push(current_range);
+                        next_range_to_address = ranges.next()
+                    } else {
+                        for i in last_exhausted_map..map_list.vector.len() {
+                            let last_map: &MapRange = &map_list.vector[i];
+                            let map_range: &Range<isize> = &last_map.source;
+                            println!(
+                                "Trying to fractionate {:?} to map {:?}",
+                                current_range, map_range
+                            );
+
+                            if map_range.start >= current_range.end {
+                                println!("Too smol! Recycling");
+                                mapped_ranges.push(current_range);
+                                next_range_to_address = ranges.next();
+                                break;
+                            }
+
+                            if current_range.end >= map_range.end {
+                                println!("Map exhausted");
+                                last_exhausted_map += 1;
+                                if current_range.start >= map_range.end {
+                                    println!("No overlap");
+                                    // Not overlapping, check next map
+                                    continue;
+                                }
+                            }
+                            let intersection = max(current_range.start, map_range.start)
+                                ..min(current_range.end, map_range.end);
+                            println!("Intersection found! {:?}", intersection);
+                            mapped_ranges.push(last_map.get_unchecked(&intersection));
+
+                            // In the left side. Its unchecked, gets recycled
+                            if map_range.start > current_range.start {
+                                let left_complement =
+                                    current_range.start..min(current_range.end, map_range.start);
+                                println!("Unmapped {:?}", left_complement);
+                                mapped_ranges.push(left_complement);
+                            }
+
+                            // Determine if there was any left over to the range
+
+                            // In the right side, it needs to be checked in another map
+                            if current_range.end > map_range.end {
+                                let right_complement = map_range.end..current_range.end;
+
+                                println!("Leftover to retry {:?}", right_complement);
+                                next_range_to_address = Some(right_complement);
+                                break;
+                            } else {
+                                println!("Moving on");
+                                next_range_to_address = ranges.next();
+                                println!("NEXT UP {:?}, ", next_range_to_address);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
-        let unused_values = all_splits
-            .iter()
-            .filter(|&range| !overlapping_numbersets.contains_range(range))
-            .cloned();
-
-        mapped_values.push(NumberSet::from_iter(unused_values));
-        mapped_values
     }
 
     fn from_range(range: &Range<isize>) -> NumberSet {
-        NumberSet {
-            0: HashSet::from([range.clone()]),
-        }
-    }
-
-    fn from_numbersets(numbersets: Vec<NumberSet>) -> NumberSet {
-        let ranges: Vec<Range<isize>> = numbersets
-            .into_iter()
-            .flat_map(|numberset| numberset.0)
-            .collect_vec();
-        NumberSet::from_vec(ranges)
+        NumberSet::from_vec(vec![range.clone()])
     }
 }
 impl Almanac {
@@ -149,21 +192,35 @@ impl Almanac {
             }
         }
     }
+    fn get(&self, number_set: NumberSet) -> NumberSet {
+        let mut last_key = self.base_key_name.clone();
+        let mut current_range = number_set;
+        loop {
+            // First iter
+            if let Some(b_key) = self.a_to_b_map.get(&last_key) {
+                let range_list = self.b_to_value_map.get(b_key).unwrap();
+                current_range = current_range.apply_mapping(&range_list);
+                last_key = b_key.to_string();
+            } else {
+                return current_range;
+            }
+        }
+    }
 
     fn get_numberset_for_numberset(&self, number_set: NumberSet) -> NumberSet {
-        let numberset_vec: Vec<NumberSet> = number_set
-            .iter()
-            .map(|range| self.get_numberset_for_range(range))
-            .collect();
-        NumberSet::from_numbersets(numberset_vec)
+        self.get(number_set)
     }
     pub fn get_seeds_as_ranges(&self) -> NumberSet {
         NumberSet::from_iter(
             self.base_values
                 .clone()
+                .chunks(2)
                 .into_iter()
-                .tuples()
-                .map(|(start, length)| (start..start + length)),
+                .map(|num| {
+                    println!("Chunks: {} {}", num[0], num[1]);
+                    num
+                })
+                .map(|slice| (slice[0]..slice[0] + slice[1])),
         )
     }
     pub fn get_seeds_as_individual_ranges(&self) -> NumberSet {
@@ -176,11 +233,8 @@ impl Almanac {
     }
     pub fn get_lowest_seed_ranges_locations(&self) -> isize {
         let key_ranges = self.get_seeds_as_ranges();
-        self.get_numberset_for_numberset(key_ranges)
-            .iter()
-            .next()
-            .unwrap()
-            .start
+        let answer = self.get(key_ranges);
+        answer.vector[0].start
     }
     pub fn get_lowest_individual_seed_location(&self) -> isize {
         let key_ranges = self.get_seeds_as_individual_ranges();
@@ -247,8 +301,8 @@ impl FromStr for Almanac {
 }
 
 impl MapRangeList {
-    pub fn iter(&self) -> Iter<'_, MapRange> {
-        self.0.iter()
+    pub fn into_vec(self) -> Vec<MapRange> {
+        self.vector
     }
 }
 impl FromStr for MapRangeList {
@@ -258,13 +312,18 @@ impl FromStr for MapRangeList {
         let map_list: Vec<MapRange> = s
             .trim()
             .lines()
+            .map(|x| {
+                println!("lines {}", x);
+                x
+            })
             .map(MapRange::from_str)
-            .flatten()
+            .map(|range| range.unwrap())
             .collect_vec();
-        Ok(Self { 0: map_list })
+        Ok(Self::from_vec(map_list))
     }
 }
 
+#[derive(Debug)]
 pub struct MapRange {
     pub source: Range<isize>,
     pub destination: Range<isize>,
@@ -274,6 +333,12 @@ pub struct MapRange {
 impl MapRange {
     // Returns the value range based on a key range assumed to be in range
     fn get_unchecked(&self, range: &Range<isize>) -> Range<isize> {
+        if (range.start < self.source.start || range.end > self.source.end) {
+            println!(
+                "BAD MAPPING key: {:?}, source: {:?}, dest: {:?}",
+                range, self.source, self.destination,
+            );
+        }
         range.start + self.offset..range.end + self.offset
     }
 }
@@ -293,10 +358,11 @@ impl FromStr for MapRange {
             .while_some()
             .next_tuple()
             .ok_or("Some items couldn't be parsed".to_string())?;
-        Ok(Self {
-            source: (source_start..source_start + length),
-            destination: (destination_start..destination_start + length),
+        let map_range = Self {
+            source: source_start..(source_start + length),
+            destination: destination_start..(destination_start + length),
             offset: (destination_start as isize - source_start as isize),
-        })
+        };
+        Ok(map_range)
     }
 }

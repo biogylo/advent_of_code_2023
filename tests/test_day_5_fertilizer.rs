@@ -15,11 +15,12 @@ mod test_challenge_parsing {
     fn parse_pair_map() {
         let map_str = " 50  98  2 \n 52  50  48 ";
         let map_list: MapRangeList = map_str.parse().unwrap();
-        let (map1, map2) = map_list.iter().collect_tuple().unwrap();
-        assert!(map1.destination.clone().eq(50..=51));
-        assert!(map1.source.clone().eq(98..100));
-        assert!(map2.destination.clone().eq(52..52 + 48));
-        assert!(map2.source.clone().eq(50..50 + 48));
+        let maps = map_list.into_vec();
+        println!("Maps vec {:?}", maps);
+        assert!(maps[0].destination.clone().eq(52..52 + 48));
+        assert!(maps[0].source.clone().eq(50..50 + 48));
+        assert!(maps[1].destination.clone().eq(50..50 + 2));
+        assert!(maps[1].source.clone().eq(98..98 + 2));
     }
 
     #[test]
@@ -30,13 +31,9 @@ mod test_challenge_parsing {
         let locations_vec = locations.iter().cloned().collect_vec();
         assert_eq!(
             locations_vec,
-            vec![
-                79_isize..80_isize,
-                14_isize..15_isize,
-                55_isize..56_isize,
-                13_isize..14_isize
-            ]
+            vec![13_isize..15_isize, 55_isize..56_isize, 79_isize..80_isize,]
         );
+        println!("Passed assertion 1");
         let closest = almanac.get_lowest_individual_seed_location();
         assert_eq!(closest, 35_isize);
     }
@@ -62,6 +59,6 @@ mod test_challenge_parsing {
         let almanac_str = fs::read_to_string("./data/fertilizer_almanac_input_long.txt").unwrap();
         let almanac: Almanac = almanac_str.parse().unwrap();
         let closest = almanac.get_lowest_seed_ranges_locations();
-        assert_eq!(closest, 46);
+        assert_eq!(closest, 26714516);
     }
 }
