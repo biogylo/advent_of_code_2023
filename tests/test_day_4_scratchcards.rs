@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test_simple_struct_parsing {
-    use advent_of_code_2023::day_4_scratchcards::{ScratchCard, ScratchPile};
+    use advent_of_code_2023::day_4_scratch_cards::{ScratchCard, ScratchPile};
     use std::fs;
 
     #[test]
@@ -19,7 +19,7 @@ mod test_simple_struct_parsing {
 }
 
 mod test_challenge_parsing {
-    use advent_of_code_2023::day_4_scratchcards::{ScratchCard, ScratchPile};
+    use advent_of_code_2023::day_4_scratch_cards::{ScratchCard, ScratchPile};
     use std::fs;
     #[test]
     fn scratchpile_challenge_1_parsed_correctly() {

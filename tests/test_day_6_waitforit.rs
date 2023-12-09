@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test_challenge_parsing {
-    use advent_of_code_2023::day_6_waitforit::{Document, RaceRecord};
+    use advent_of_code_2023::day_6_wait_for_it::{Document, RaceRecord};
     use std::fs;
 
     #[test]
