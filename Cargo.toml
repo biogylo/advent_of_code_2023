@@ -3,12 +3,18 @@ name = "advent_of_code_2023"
 version = "0.1.0"
 edition = "2021"
 
+[profile.dev]
+opt-level = 3               # Use slightly better optimizations.
+overflow-checks = false     # Disable integer overflow checks.
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 range-collections = "0.4.5"
 smallvec = "1.11.2"
+num-traits = "0.2.17"
 strum = "0.25"
 strum_macros = "0.25.3"
 itertools = "0.12.0"
+eqsolver = "0.1.2"
 

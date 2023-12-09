@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::isize;
 use std::ops::Range;
 use std::str::FromStr;
-use strum_macros::Display;
 
 pub struct MapRangeList {
     vector: Vec<MapRange>,
@@ -173,12 +172,12 @@ impl NumberSet {
         }
     }
 
-    fn from_range(range: &Range<isize>) -> NumberSet {
+    pub fn from_range(range: &Range<isize>) -> NumberSet {
         NumberSet::from_vec(vec![range.clone()])
     }
 }
 impl Almanac {
-    fn get_numberset_for_range(&self, range: &Range<isize>) -> NumberSet {
+    pub fn get_numberset_for_range(&self, range: &Range<isize>) -> NumberSet {
         let mut last_key = self.base_key_name.clone();
         let mut current_range = NumberSet::from_range(range);
         loop {
@@ -333,7 +332,7 @@ pub struct MapRange {
 impl MapRange {
     // Returns the value range based on a key range assumed to be in range
     fn get_unchecked(&self, range: &Range<isize>) -> Range<isize> {
-        if (range.start < self.source.start || range.end > self.source.end) {
+        if range.start < self.source.start || range.end > self.source.end {
             println!(
                 "BAD MAPPING key: {:?}, source: {:?}, dest: {:?}",
                 range, self.source, self.destination,
