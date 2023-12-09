@@ -30,48 +30,41 @@ impl RaceRecord {
     }
 
     pub fn ways_to_beat(&self) -> isize {
-        // Gets the parabola formula, by taking three points
+        // The distance is actually a quadratic formula, where x is the hold time
+        let quadratic = |x: isize| RaceRecord::compute_distance(x, self.duration_ms);
 
-        // axx + bx + c = y
+        // ax^2 + bx + c = y
         // x is hold time
         // y is distance accomplished
 
-        // axx + bx + c - y = 0      -> where x = 0
+        // Step 1: Plug in 0
+        // a^2 + bx + c - y = 0    -> where x = 0
         // c = y0
-        let quadratic = |x: isize| RaceRecord::compute_distance(x, self.duration_ms);
-        let c = quadratic(0);
-        // axx + bx =  y - c
-        // Plug in two numbers to get another system
-        let a_plus_b = quadratic(1) - c;
-        let a4_plus_b2 = quadratic(2) - c;
-        let a = (a4_plus_b2 - 2 * a_plus_b) / 2;
-        let b = a_plus_b - a;
+        let c = quadratic(0) as f64;
 
-        println!("we need to find the first record hold time, add one and find the distance to x_vertex times 2");
-        println!("x is hold time, y is distance");
-        println!("{}x^2 + {}x + {}", a, b, c);
-        // Got all the values! Now need to find the roots, and their distance to the record!
-        let sqroot_term = f64::sqrt(((b * b) - (4 * a * c)) as f64);
-        let x_root_0 = (-b as f64 + sqroot_term) / (2 * a) as f64;
-        let x_root_1 = (-b as f64 - sqroot_term) / (2 * a) as f64;
-        println!("Roots {} && {}", x_root_0, x_root_1);
-        println!("Record is distance {}, for hold time ", self.distance_mm,);
+        // Step 2: Plug in two numbers to get another system
+        let _1a_plus_1b = quadratic(1) as f64 - c;
+        let _4a_plus_2b = quadratic(2) as f64 - c;
+        let a = (_4a_plus_2b - 2.0 * _1a_plus_1b) / 2.0;
+        let b = _1a_plus_1b - a;
 
-        // Vertex is x_v =-b/2a
-        let h_x_vertex = -b as f64 / (2 * a) as f64;
-        let k_y_vertex =
-            h_x_vertex * h_x_vertex * (a as f64) + (b as f64) * h_x_vertex + (c as f64);
+        // Step 2: Get the vertex
+        // h =-b/2a   -> x value of the vertex
+        // k = quadratic(h)  -> y value of the vertex
+        let h_x_vertex = -b / (2.0 * a);
+        let k_y_vertex = h_x_vertex * h_x_vertex * a + b * h_x_vertex + c;
 
-        let small_inverse = |y| h_x_vertex - (f64::sqrt((y - k_y_vertex) / (a as f64)));
-        println!("Vertex is {},{}", h_x_vertex, k_y_vertex);
-        println!("First point {}", small_inverse(self.distance_mm as f64));
-        let first_x_after_record = (small_inverse(self.distance_mm as f64)).floor() as isize + 1;
-        println!("Value from actual: {}", first_x_after_record);
+        let inverse_of_quadratic = |y| h_x_vertex - f64::sqrt((y - k_y_vertex) / a);
 
-        // Actually, we need to find the middle point, or middle two points, and those should be equidistant to records
+        // Get the first value after the record.
+        // We solve for x that corresponds to the record, we truncate, and add 1
+        // to get the next discrete x value that is bigger
+        let first_x_after_record = inverse_of_quadratic(self.distance_mm as f64) as isize + 1;
+
+        // Depending on whether there is one middle point or two, we apply math
         let first_middle_point = self.duration_ms / 2;
-
-        if (self.duration_ms + 1) % 2 == 1 {
+        let even_number_of_discrete_choices = (self.duration_ms + 1) % 2 == 1;
+        if even_number_of_discrete_choices {
             // One single middle point
             ((first_middle_point - first_x_after_record) * 2) + 1
         } else {

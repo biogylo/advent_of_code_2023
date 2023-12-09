@@ -71,6 +71,6 @@ mod test_challenge_parsing {
         let document_str = fs::read_to_string("./data/waitforit_input_much_long.txt").unwrap();
         let doc: Document = document_str.parse().unwrap();
         let product = doc.product_of_ways_to_beat();
-        assert_eq!(product, 1);
+        assert_eq!(product, 39570185);
     }
 }
