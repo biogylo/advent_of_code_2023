@@ -10,4 +10,5 @@ pub mod day_5_fertilizer;
 pub mod day_6_wait_for_it;
 pub mod day_7_camel_cards;
 pub mod day_8_haunted_wasteland;
+pub mod day_9_mirage_maintenance;
 pub mod friend;

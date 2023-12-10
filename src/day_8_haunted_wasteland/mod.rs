@@ -1,5 +1,4 @@
 use crate::day_8_haunted_wasteland::Direction::{Left, Right};
-use eqsolver::nalgebra::allocator::SameShapeC;
 use itertools::{enumerate, Itertools};
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -14,7 +13,6 @@ pub enum Direction {
 pub struct GhostKey {
     pub index: usize,
     pub full: String,
-    last: char,
     last_index: usize,
 }
 impl Direction {
@@ -40,8 +38,7 @@ impl GhostMap {
     }
 
     pub fn walk_across_spacetime(&self, start: usize, end: usize) -> usize {
-        let mut next_keys: Vec<&GhostKey> = self.get_all_nodes_ending_with(start);
-        let mut step_iterator = self.iter_directions().enumerate();
+        let next_keys: Vec<&GhostKey> = self.get_all_nodes_ending_with(start);
         let mut steps_needed: Vec<usize> = vec![];
 
         for key in next_keys {
@@ -125,7 +122,7 @@ fn get_smallest_factor(num: usize) -> usize {
         "Getting smallest factor of {}, with bound: {}",
         num, upper_bound
     );
-    for n in (2..=upper_bound) {
+    for n in 2..=upper_bound {
         if num % n == 0 {
             return n;
         }
@@ -154,7 +151,6 @@ impl FromStr for GhostMap {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut directions: Vec<Direction> = vec![];
-        let mut node_map: Vec<(GhostKey, GhostKey)> = vec![];
         let mut node_hashmap: HashMap<String, (String, String)> = HashMap::new();
 
         for line in s.trim().lines() {
@@ -211,13 +207,12 @@ impl FromStr for GhostMap {
             let gk = GhostKey {
                 index,
                 full: key.clone(),
-                last,
                 last_index,
             };
             string_to_ghostkey.insert(key.clone(), gk);
         }
 
-        let mut node_map: Vec<(GhostKey, GhostKey)> = sorted_keys
+        let node_map: Vec<(GhostKey, GhostKey)> = sorted_keys
             .iter()
             .map(|key| node_hashmap[key].clone())
             .map(|(s1, s2)| {
