@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test_challenge_parsing {
-    use advent_of_code_2023::day_8_haunted_wasteland::{Direction, GhostMap};
+    use advent_of_code_2023::day_8_haunted_wasteland::{factorize, Direction, GhostMap};
     use itertools::Itertools;
     use std::fs;
 
@@ -74,6 +74,23 @@ mod test_challenge_parsing {
     fn ghost_card_long_spacetime() {
         let buffer = fs::read_to_string("./data/haunted_wasteland_input_long.txt").unwrap();
         let ghost_map: GhostMap = buffer.parse().unwrap();
-        assert_eq!(ghost_map.walk_across_spacetime_from_ending('A', 'Z'), 0);
+        assert_eq!(
+            ghost_map.walk_across_spacetime_from_ending('A', 'Z'),
+            12927600769609
+        );
+    }
+
+    #[test]
+    fn factorize_works() {
+        assert_eq!(factorize(20), vec![2, 2, 5]);
+        assert_eq!(factorize(48), vec![2, 2, 2, 2, 3]);
+        assert_eq!(factorize(75), vec![3, 5, 5]);
+        assert_eq!(factorize(98), vec![2, 7, 7]);
+        assert_eq!(factorize(105), vec![3, 5, 7]);
+        assert_eq!(factorize(132), vec![2, 2, 3, 11]);
+        assert_eq!(factorize(154), vec![2, 7, 11]);
+        assert_eq!(factorize(200), vec![2, 2, 2, 5, 5]);
+        assert_eq!(factorize(225), vec![3, 3, 5, 5]);
+        assert_eq!(factorize(270), vec![2, 3, 3, 3, 5]);
     }
 }

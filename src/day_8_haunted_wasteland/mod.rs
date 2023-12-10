@@ -42,25 +42,14 @@ impl GhostMap {
     pub fn walk_across_spacetime(&self, start: usize, end: usize) -> usize {
         let mut next_keys: Vec<&GhostKey> = self.get_all_nodes_ending_with(start);
         let mut step_iterator = self.iter_directions().enumerate();
-        loop {
-            //
-            let (step_count, direction) = step_iterator.next().unwrap();
+        let mut steps_needed: Vec<usize> = vec![];
 
-            if next_keys.iter().all(|gk| gk.last_index == end) {
-                return step_count;
-            }
-
-            let mut keys_walked = vec![];
-            for key in next_keys.into_iter() {
-                let (left, right) = &self.node_map[key.index];
-                let next_key = match direction {
-                    Left => left,
-                    Right => right,
-                };
-                keys_walked.push(next_key);
-            }
-            next_keys = keys_walked;
+        for key in next_keys {
+            steps_needed.push(self.walk_until_ending(key.index, end));
         }
+        println!("Need to walk the following amount: {:?}", steps_needed);
+        // They will all match, for the first time in the mcd
+        least_common_multiple(steps_needed)
     }
 
     pub fn get_all_nodes_ending_with(&self, index: usize) -> Vec<&GhostKey> {
@@ -130,6 +119,36 @@ impl GhostMap {
         self.walk(start_index, end_index)
     }
 }
+fn get_smallest_factor(num: usize) -> usize {
+    let upper_bound = f64::sqrt(num as f64).floor() as usize;
+    println!(
+        "Getting smallest factor of {}, with bound: {}",
+        num, upper_bound
+    );
+    for n in (2..=upper_bound) {
+        if num % n == 0 {
+            return n;
+        }
+    }
+    num
+}
+pub fn factorize(num: usize) -> Vec<usize> {
+    let mut factors = vec![];
+    let mut last_factor = num;
+    loop {
+        let factor = get_smallest_factor(last_factor);
+        factors.push(factor);
+        if factor == last_factor {
+            println!("Factors: {:?}", factors);
+            return factors;
+        }
+        last_factor /= factor;
+    }
+}
+fn least_common_multiple(nums: Vec<usize>) -> usize {
+    nums.iter().flat_map(|n| factorize(*n)).unique().product()
+}
+
 impl FromStr for GhostMap {
     type Err = String;
 
