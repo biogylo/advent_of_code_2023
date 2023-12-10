@@ -41,7 +41,7 @@ impl Ord for CamelCard {
 
 const CAMEL_CARD_COUNT: usize = 13;
 const CAMEL_CARDS: [char; CAMEL_CARD_COUNT] = [
-    '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A',
+    'J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A',
 ];
 
 const HAND_SIZE: usize = 5;
@@ -148,17 +148,21 @@ impl FromStr for CamelHand {
             number: 0,
             character: '2',
         }; HAND_SIZE];
-
+        let mut joker_count = 0;
         for i in 0..HAND_SIZE {
             let camel_card = hand_opts[i].ok_or("Error parsing camel card".to_string())?;
-            count_map[camel_card.number] += 1;
+            if camel_card.character == 'J' {
+                joker_count += 1;
+            } else {
+                count_map[camel_card.number] += 1;
+            }
             hand[i] = camel_card;
         }
         count_map.sort();
         let largest_count = count_map[CAMEL_CARD_COUNT - 1];
         let second_largest_count = count_map[CAMEL_CARD_COUNT - 2];
-
-        let hand_type: u8 = match (largest_count, second_largest_count) {
+        let largest_count_plus_jokers = largest_count + joker_count;
+        let hand_type: u8 = match (largest_count_plus_jokers, second_largest_count) {
             (5, _) => Ok(6), // Five of a kind
             (4, _) => Ok(5), //  Four of a kind
             (3, 2) => Ok(4), // Full house

@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod test_challenge_parsing {
     use advent_of_code_2023::day_7_camel_cards::{CamelCard, CamelHand, CamelHandSet};
-    use advent_of_code_2023::friend::Friends;
     use itertools::Itertools;
     use std::fs;
 
@@ -31,13 +30,12 @@ mod test_challenge_parsing {
         let three_of_a_kind: CamelHand = "TTT98 1".parse().unwrap();
         let two_pair: CamelHand = "23432 1".parse().unwrap();
         let one_pair: CamelHand = "A23A4 1".parse().unwrap();
+        let two_pair_joker: CamelHand = "J3456 1".parse().unwrap();
         let one_pair_lower: CamelHand = "223A4 1".parse().unwrap();
         let high_card: CamelHand = "34567 1".parse().unwrap();
-        let high_card_higher: CamelHand = "J3456 1".parse().unwrap();
 
         let vec_cards_unordered = vec![
             high_card.clone(),
-            high_card_higher.clone(),
             one_pair_lower.clone(),
             one_pair.clone(),
             two_pair.clone(),
@@ -46,13 +44,14 @@ mod test_challenge_parsing {
             full_house_higher.clone(),
             four_of_a_kind.clone(),
             five_of_a_kind.clone(),
+            two_pair_joker.clone(),
         ];
 
         let vec_cards_expected_order = vec![
             high_card,
-            high_card_higher,
             one_pair_lower,
             one_pair,
+            two_pair_joker,
             two_pair,
             three_of_a_kind,
             full_house,
@@ -70,7 +69,7 @@ mod test_challenge_parsing {
             .unwrap()
             .parse()
             .unwrap();
-        assert_eq!(camelset.total_winnings(), 6440);
+        assert_eq!(camelset.total_winnings(), 5905);
     }
 
     #[test]
@@ -79,6 +78,6 @@ mod test_challenge_parsing {
             .unwrap()
             .parse()
             .unwrap();
-        assert_eq!(camelset.total_winnings(), 0);
+        assert_eq!(camelset.total_winnings(), 255632664);
     }
 }
