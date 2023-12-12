@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test_convert {
-    use advent_of_code_2023::day_10_pipe_maze::{ugly_pipe_maze_to_cute_pipe_maze, PipeMaze};
+    use advent_of_code_2023::day_10_pipe_maze::PipeMaze;
     use std::fs;
 
     #[test]
@@ -37,7 +37,6 @@ mod test_convert {
     fn pipe_maze_finds_right_furthest_point_using_the_challenge_input() {
         let buffer = fs::read_to_string("./data/pipe_maze_input_long.txt").unwrap();
         let pipe_maze: PipeMaze = buffer.trim().parse().unwrap();
-        fs::write("./data/pipe_maze_generated.txt", format!("{}", pipe_maze));
         let distance_to_furthest = pipe_maze.farthest_point_distance().unwrap();
         assert_eq!(distance_to_furthest, 6800)
     }

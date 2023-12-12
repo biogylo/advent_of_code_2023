@@ -1,6 +1,5 @@
 use crate::day_10_pipe_maze::Pipe::{NorthEast, NorthWest, SouthEast, SouthWest};
 use itertools::Itertools;
-use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Write};
 use std::ops::Index;
 use std::str::FromStr;
@@ -124,11 +123,6 @@ impl Pipe {
             None
         }
     }
-
-    pub fn to_coordinate_offset(&self, comes_from: &Dir) -> Option<(isize, isize)> {
-        let next_direction = self.next(comes_from)?;
-        Some(next_direction.to_coordinate_offset())
-    }
 }
 pub struct PipeMaze {
     grid: Vec<Vec<Pipe>>,
@@ -150,7 +144,7 @@ impl PipeMaze {
                             // println!("Points in same row, {:?}", pipes_in_loop);
         let mut edge_count = 0;
         let mut last_pipe = &Pipe::Blocked;
-        for (row, col, pipe) in pipes_in_loop {
+        for (_, _, pipe) in pipes_in_loop {
             match (last_pipe, pipe) {
                 (SouthEast, NorthWest) => (), // Dont count edges in this case, since its been counted
                 (NorthEast, SouthWest) => (),
