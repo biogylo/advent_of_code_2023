@@ -1,9 +1,8 @@
 #![feature(iter_next_chunk)]
-#![feature(slice_index_methods)]
-extern crate core;
 
 pub mod day_10_pipe_maze;
 pub mod day_11_cosmic_expansion;
+pub mod day_12_hot_springs;
 pub mod day_1_trebuchet;
 pub mod day_2_cube_conundrum;
 pub mod day_3_gear_ratios;
