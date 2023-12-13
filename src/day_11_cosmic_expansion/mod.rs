@@ -1,7 +1,6 @@
 use itertools::Itertools;
 use std::cmp::{max, min};
 use std::collections::HashSet;
-use std::ffi::c_void;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 #[derive(Clone, PartialEq)]
@@ -67,14 +66,16 @@ impl Display for SpaceImage {
     }
 }
 impl SpaceImage {
-    pub fn expand(self) -> SpaceImage {
+    pub fn age_by(self, age: usize) -> SpaceImage {
         // Expands the spaceimage
         let mut grid_with_repeated_rows: Vec<Vec<Observation>> = vec![];
 
         // Check all rows
         for row in &self.grid {
-            if (row.iter().all(|ob| ob == &Observation::EmptySpace)) {
-                grid_with_repeated_rows.push(row.clone());
+            if row.iter().all(|ob| ob == &Observation::EmptySpace) {
+                for _ in 0..age {
+                    grid_with_repeated_rows.push(row.clone());
+                }
             }
             grid_with_repeated_rows.push(row.clone());
         }
@@ -95,7 +96,9 @@ impl SpaceImage {
             let mut new_row: Vec<Observation> = vec![];
             for (i, obs) in row.iter().enumerate() {
                 if columns_to_repeat.contains(&i) {
-                    new_row.push(obs.clone());
+                    for _ in 0..age {
+                        new_row.push(obs.clone());
+                    }
                 }
                 new_row.push(obs.clone());
             }
@@ -106,6 +109,24 @@ impl SpaceImage {
         }
     }
 
+    pub fn find_empty_rows(&self) -> Vec<usize> {
+        self.grid
+            .iter()
+            .enumerate()
+            .filter(|(_, row)| row.iter().all(|ob| ob == &Observation::EmptySpace))
+            .map(|(row_n, _)| row_n)
+            .collect_vec()
+    }
+
+    pub fn find_empty_cols(&self) -> Vec<usize> {
+        (0..self.grid[0].len())
+            .filter(|col_n| {
+                self.grid
+                    .iter()
+                    .all(|row| row[*col_n] == Observation::EmptySpace)
+            })
+            .collect_vec()
+    }
     pub fn find_galaxies(&self) -> HashSet<(usize, usize)> {
         let mut locations: HashSet<(usize, usize)> = HashSet::new();
 
@@ -119,15 +140,34 @@ impl SpaceImage {
         locations
     }
 
-    pub fn find_smallest_distances(&self) -> Vec<usize> {
+    pub fn find_smallest_distances(&self, grown_times: usize) -> Vec<usize> {
+        let mut distances: Vec<usize> = vec![];
         let galaxies = self.find_galaxies();
-        println!("{} Galaxies: {:?}", galaxies.len(), galaxies);
-        let dist = galaxies
-            .iter()
-            .combinations(2)
-            .map(|two_points| taxicab_distance(*two_points[0], *two_points[1]))
-            .collect_vec();
-        println!("The vector length is {}, and it has {:?}", dist.len(), dist);
-        dist
+        let empty_rows = self.find_empty_rows();
+        let empty_cols = self.find_empty_cols();
+        for combination in galaxies.iter().combinations(2) {
+            let ((row_n, col_n), (row_m, col_m)) = (combination[0], combination[1]);
+            // Find how many empty rows are between n and m
+            let small_row = min(row_n, row_m);
+            let large_row = max(row_n, row_m);
+
+            let empty_rows_inbetween = empty_rows
+                .iter()
+                .filter(|row_n| large_row > row_n && row_n > &small_row)
+                .count();
+
+            let small_col = min(col_n, col_m);
+            let large_col = max(col_n, col_m);
+
+            let empty_cols_inbetween = empty_cols
+                .iter()
+                .filter(|col_n| large_col >= col_n && col_n >= &small_col)
+                .count();
+
+            let taxicab_distance = taxicab_distance((*row_n, *col_n), (*row_m, *col_m))
+                + (empty_cols_inbetween + empty_rows_inbetween) * (grown_times - 1); // Taxicab distance already takes the row/cols into account once
+            distances.push(taxicab_distance);
+        }
+        distances
     }
 }
