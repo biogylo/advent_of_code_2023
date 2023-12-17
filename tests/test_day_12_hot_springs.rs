@@ -25,4 +25,12 @@ mod tests {
         assert_eq!(arrangements, 1);
         //
     }
+
+    #[test]
+    fn small_pattern_4_works() {
+        let mut memo = HotSpringsMemo::new();
+        let arrangements = memo.get_arrangements_for_row("#???#? 1,2").unwrap();
+        assert_eq!(arrangements, 2);
+        //
+    }
 }

@@ -1,5 +1,7 @@
 #![feature(iter_next_chunk)]
 
+extern crate core;
+
 pub mod day_10_pipe_maze;
 pub mod day_11_cosmic_expansion;
 pub mod day_12_hot_springs;

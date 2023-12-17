@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::ops::Add;
+
 #[derive(Eq, PartialEq, Hash)]
 struct StringAndVectorKey {
     the_string: String,
@@ -19,6 +20,12 @@ impl StringAndVectorKey {
 }
 pub struct HotSpringsMemo {
     memory: HashMap<StringAndVectorKey, usize>,
+}
+
+enum MatchResult<'a> {
+    Matched,
+    NotMatched,
+    Rest(&'a [char]),
 }
 
 impl HotSpringsMemo {
@@ -66,75 +73,47 @@ impl HotSpringsMemo {
             .map(|the_row| self.get_arrangements_for_row(the_row))
             .fold_ok(0, Add::add)
     }
-
     fn count_matching_patterns(&mut self, the_string: &[char], the_vector: &[usize]) -> usize {
-        // if the_string.len() == 0 && the_vector.len() == 0 {
-        //     return 1;
-        // }
+        let mut matches = 0;
         if the_vector.len() == 0 {
-            // Ran out of options, all the leftovers must be either unknown or unset
-            if the_string
-                .iter()
-                .all(|&c| c == HotSpringsMemo::UNKNOWN || c == HotSpringsMemo::OPERATIONAL)
-            {
+            if the_string.len() == 0 {
+                // Defo a match
+                return 1;
+            } else if the_string.iter().all(|c| c != &HotSpringsMemo::DAMAGED) {
                 return 1;
             } else {
                 return 0;
             }
         }
-        let first_count = the_vector[0];
-        if first_count > the_string.len() {
-            return 0;
-        }
-        let params = StringAndVectorKey::from_parameters(the_string, the_vector);
-
-        if let Some(memoized_value) = self.memory.get(&params) {
-            return *memoized_value;
-        }
-
-        let mut matches = 0;
-        // Find first match
-        for (i, window) in the_string.windows(first_count).enumerate() {
-            // We can only loop if we have chunks at least the size of our first count
-            // And since there HAS to be a match, since the input is assumed to be valid,
-            if window
+        let match_count = the_vector[0];
+        let rest_vec = &the_vector[1..];
+        for (i, _) in the_string.windows(match_count).enumerate() {
+            if the_string[i..i + match_count]
                 .iter()
-                .all(|&c| c == HotSpringsMemo::UNKNOWN || c == HotSpringsMemo::DAMAGED)
+                .all(|c| c != &HotSpringsMemo::OPERATIONAL)
             {
-                // If we exhausted the string, and there is leftover on the vector, this is not a valid arrangement
-                let first_char_in_next_window_index = i + first_count;
-                let chars_left = the_string.len() - (first_char_in_next_window_index);
-
-                if chars_left == 0 {
-                    if the_vector.len() >= 2 {
-                        return 0;
+                // A possible match: three scenatios
+                if let Some(next_char) = the_string.get(i + match_count) {
+                    if next_char != &HotSpringsMemo::DAMAGED {
+                        // This could very well be a match, but only if the rest is a match
+                        matches += self
+                            .count_matching_patterns(&the_string[i + match_count + 1..], rest_vec);
                     } else {
-                        return 1;
+                        // Not a match... We need to iterate further
                     }
-                }
-
-                if chars_left == 1 {
-                    if the_string[first_char_in_next_window_index] == HotSpringsMemo::DAMAGED {
-                        // Not a valid arrangement!
-                        return 0;
-                    } else {
-                        return 1;
+                } else {
+                    // Exhausted the string
+                    if rest_vec.len() == 0 {
+                        matches += 1;
                     }
+                    return matches;
                 }
-
-                matches += self.count_matching_patterns(
-                    &the_string[first_char_in_next_window_index..],
-                    &the_vector[1..],
-                );
             }
-            // We decide whether to continue the loop, if the first one is not damaged
-            // because if it is, then it means we cannot feasibly match the first group anymore
-            if window[0] == HotSpringsMemo::DAMAGED {
-                break;
+            if the_string[i] == HotSpringsMemo::DAMAGED {
+                // Wont be matches in the next loops
+                return matches;
             }
         }
-
-        self.memory.insert(params, matches);
         return matches;
     }
 }
