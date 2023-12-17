@@ -67,8 +67,7 @@ impl HotSpringsMemo {
             unfolded_record_array.extend(record_array.clone());
             unfolded_counts.extend(counts.clone());
         }
-        let mut cache = HotSpringsMemo::new();
-        let matching = cache.cached_count_matching_patters(
+        let matching = self.cached_count_matching_patters(
             unfolded_record_array.as_slice(),
             unfolded_counts.as_slice(),
         );
@@ -80,11 +79,13 @@ impl HotSpringsMemo {
         the_paragraph: &str,
         unfold_n: usize,
     ) -> Result<usize, String> {
-        the_paragraph
+        let result = the_paragraph
             .trim()
             .lines()
             .map(|the_row| self.get_arrangements_for_row(the_row, unfold_n))
-            .fold_ok(0, Add::add)
+            .fold_ok(0, Add::add);
+        println!("Cache size: {}", self.memory.len());
+        result
     }
 
     fn cached_count_matching_patters(
