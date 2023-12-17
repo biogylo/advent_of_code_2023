@@ -85,7 +85,7 @@ mod tests {
         let arrangements = memo
             .get_arrangements_for_paragraph(the_paragraph.as_str(), 5)
             .unwrap();
-        assert_eq!(arrangements, 0);
+        assert_eq!(arrangements, 10861030975833);
         //
     }
 }

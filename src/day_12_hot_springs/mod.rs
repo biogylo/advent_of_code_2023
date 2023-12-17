@@ -67,11 +67,12 @@ impl HotSpringsMemo {
             unfolded_record_array.extend(record_array.clone());
             unfolded_counts.extend(counts.clone());
         }
-
-        return Ok(HotSpringsMemo::count_matching_patterns(
+        let mut cache = HotSpringsMemo::new();
+        let matching = cache.cached_count_matching_patters(
             unfolded_record_array.as_slice(),
             unfolded_counts.as_slice(),
-        ));
+        );
+        return Ok(matching);
     }
 
     pub fn get_arrangements_for_paragraph(
@@ -95,11 +96,11 @@ impl HotSpringsMemo {
         if let Some(cache) = self.memory.get(&key) {
             return *cache;
         }
-        let result = HotSpringsMemo::count_matching_patterns(the_string, the_vector);
+        let result = self.count_matching_patterns(the_string, the_vector);
         self.memory.insert(key, result);
         result
     }
-    fn count_matching_patterns(the_string: &[char], the_vector: &[usize]) -> usize {
+    fn count_matching_patterns(&mut self, the_string: &[char], the_vector: &[usize]) -> usize {
         if the_vector.len() == 0 {
             if the_string.len() == 0 {
                 // Defo a match
@@ -123,7 +124,7 @@ impl HotSpringsMemo {
                 if let Some(next_char) = the_string.get(i + match_count) {
                     if next_char != &HotSpringsMemo::DAMAGED {
                         // This could very well be a match, but only if the rest is a match
-                        matches += HotSpringsMemo::count_matching_patterns(
+                        matches += self.cached_count_matching_patters(
                             &the_string[i + match_count + 1..],
                             rest_vec,
                         );
