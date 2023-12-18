@@ -62,7 +62,7 @@ impl HotSpringsMemo {
         let mut unfolded_record_array = record_array.clone();
         let mut unfolded_counts = counts.clone();
 
-        for i in (1..unfold_n) {
+        for _ in 1..unfold_n {
             unfolded_record_array.push(HotSpringsMemo::UNKNOWN);
             unfolded_record_array.extend(record_array.clone());
             unfolded_counts.extend(counts.clone());

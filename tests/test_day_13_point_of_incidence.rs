@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use advent_of_code_2023::day_13_point_of_incidence::summarize_reflections;
     use std::fs;
 
