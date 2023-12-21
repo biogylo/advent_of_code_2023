@@ -30,7 +30,7 @@ mod test_challenge_parsing {
         let three_of_a_kind: CamelHand = "TTT98 1".parse().unwrap();
         let two_pair: CamelHand = "23432 1".parse().unwrap();
         let one_pair: CamelHand = "A23A4 1".parse().unwrap();
-        let two_pair_joker: CamelHand = "J3456 1".parse().unwrap();
+        let one_pair_joker: CamelHand = "J3456 1".parse().unwrap();
         let one_pair_lower: CamelHand = "223A4 1".parse().unwrap();
         let high_card: CamelHand = "34567 1".parse().unwrap();
 
@@ -44,14 +44,14 @@ mod test_challenge_parsing {
             full_house_higher.clone(),
             four_of_a_kind.clone(),
             five_of_a_kind.clone(),
-            two_pair_joker.clone(),
+            one_pair_joker.clone(),
         ];
 
         let vec_cards_expected_order = vec![
             high_card,
+            one_pair_joker,
             one_pair_lower,
             one_pair,
-            two_pair_joker,
             two_pair,
             three_of_a_kind,
             full_house,
